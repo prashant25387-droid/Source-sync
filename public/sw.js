@@ -1,44 +1,45 @@
 const CACHE_NAME = 'fasalsetu-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
-];
+const CORE_ASSETS = ['/', '/index.html', '/manifest.json'];
 
+// Install: precache core assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.addAll(CORE_ASSETS);
+    })()
   );
   self.skipWaiting();
 });
 
+// Activate: delete every cache except the current one
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       );
-    })
+    })()
   );
   self.clients.claim();
 });
 
+// Fetch: network first, fall back to cache (or index.html for page loads)
 self.addEventListener('fetch', (event) => {
-  // Network first, fallback to cache for API or offline
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request).then((response) => {
-        if (response) return response;
-        if (event.request.headers.get('accept')?.includes('text/html')) {
+    (async () => {
+      try {
+        return await fetch(event.request);
+      } catch (err) {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+
+        const accept = event.request.headers.get('accept') || '';
+        if (accept.includes('text/html')) {
           return caches.match('/index.html');
         }
-      });
-    })
+      }
+    })()
   );
 });
