@@ -1,45 +1,50 @@
 const CACHE_NAME = 'fasalsetu-v1';
 const CORE_ASSETS = ['/', '/index.html', '/manifest.json'];
+const FALLBACK_PAGE = '/index.html';
 
-// Install: precache core assets
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    (async () => {
-      const cache = await caches.open(CACHE_NAME);
-      await cache.addAll(CORE_ASSETS);
-    })()
-  );
+async function precacheCoreAssets() {
+  const cache = await caches.open(CACHE_NAME);
+  await cache.addAll(CORE_ASSETS);
+}
+
+async function removeStaleCaches() {
+  const cacheKeys = await caches.keys();
+  const staleKeys = cacheKeys.filter((key) => key !== CACHE_NAME);
+  await Promise.all(staleKeys.map((key) => caches.delete(key)));
+}
+
+function wantsHtml(request) {
+  const accept = request.headers.get('accept') || '';
+  return accept.includes('text/html');
+}
+
+async function networkFirst(request) {
+  try {
+    return await fetch(request);
+  } catch (error) {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) return cachedResponse;
+
+    if (wantsHtml(request)) {
+      return caches.match(FALLBACK_PAGE);
+    }
+  }
+}
+
+function onInstall(event) {
+  event.waitUntil(precacheCoreAssets());
   self.skipWaiting();
-});
+}
 
-// Activate: delete every cache except the current one
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    (async () => {
-      const keys = await caches.keys();
-      await Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    })()
-  );
+function onActivate(event) {
+  event.waitUntil(removeStaleCaches());
   self.clients.claim();
-});
+}
 
-// Fetch: network first, fall back to cache (or index.html for page loads)
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    (async () => {
-      try {
-        return await fetch(event.request);
-      } catch (err) {
-        const cached = await caches.match(event.request);
-        if (cached) return cached;
+function onFetch(event) {
+  event.respondWith(networkFirst(event.request));
+}
 
-        const accept = event.request.headers.get('accept') || '';
-        if (accept.includes('text/html')) {
-          return caches.match('/index.html');
-        }
-      }
-    })()
-  );
-});
+self.addEventListener('install', onInstall);
+self.addEventListener('activate', onActivate);
+self.addEventListener('fetch', onFetch);
