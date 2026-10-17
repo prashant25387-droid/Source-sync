@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FileCheck,
   Award,
@@ -10,6 +10,8 @@ import {
   MicOff,
   PlusCircle,
   Camera,
+  Image as ImageIcon,
+  Trash2,
   ShieldCheck,
   Sparkles,
   ArrowRight,
@@ -34,6 +36,64 @@ export function PassportTab({ lang, passportData, onAddLog, onQuickAdd500 }) {
   const [isResolved, setIsResolved] = useState(true);
   const [note, setNote] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
+
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
+
+  const processAndSetImage = (file) => {
+    if (!file) return;
+    setIsProcessingPhoto(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 900;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height && width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else if (height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Watermark with date and authentication text
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.70)';
+        ctx.fillRect(0, height - 34, width, 34);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 13px sans-serif';
+        const dateStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        ctx.fillText(`🌾 FasalSetu • ${dateStr} • Farmer Photo Evidence`, 10, height - 12);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        setPhotoUrl(dataUrl);
+        setIsProcessingPhoto(false);
+        if (!note) {
+          setNote(lang === 'hi' ? 'खेत का फोटो प्रमाण (Photo Evidence)' : 'Farm photo evidence captured');
+        }
+        setShowAddLogModal(true);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageCapture = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processAndSetImage(file);
+    }
+    e.target.value = '';
+  };
 
   // Synchronize when passportData updates from parent/server
   useEffect(() => {
@@ -144,6 +204,24 @@ export function PassportTab({ lang, passportData, onAddLog, onQuickAdd500 }) {
 
   return (
     <div className="tab-content">
+      {/* Native Camera input (directly launches camera on mobile / webcam) */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleImageCapture}
+        style={{ display: 'none' }}
+      />
+      {/* Photo Gallery / Files input */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleImageCapture}
+        style={{ display: 'none' }}
+      />
+
       {/* 1. Big Score Circle & Grade Card */}
       <div className="ui-card" style={{ textAlign: 'center', padding: '20px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -304,11 +382,38 @@ export function PassportTab({ lang, passportData, onAddLog, onQuickAdd500 }) {
       {/* 4. Photo Evidence Gallery (3-Column Grid) */}
       <div className="ui-card">
         <div className="ui-card-header">
-          <h3 className="card-title" style={{ fontSize: 15 }}>
-            <Camera size={18} color="var(--primary)" />
-            <span>{getTranslation(lang, 'photoEvidenceTitle')}</span>
-          </h3>
-          <span style={{ fontSize: 12, color: '#64748b' }}>{photoLogs.length} {lang === 'hi' ? 'फोटो' : 'photos'}</span>
+          <div>
+            <h3 className="card-title" style={{ fontSize: 15 }}>
+              <Camera size={18} color="var(--primary)" />
+              <span>{getTranslation(lang, 'photoEvidenceTitle')}</span>
+            </h3>
+            <span style={{ fontSize: 11, color: '#64748b' }}>
+              {photoLogs.length} {lang === 'hi' ? 'फोटो प्रमाण उपलब्ध' : 'photos recorded'}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              className="btn-tap btn-primary"
+              style={{ minHeight: 36, padding: '4px 12px', fontSize: 12, borderRadius: 'var(--radius-full)' }}
+              title="Take Photo with Camera"
+            >
+              <Camera size={14} />
+              <span>{lang === 'hi' ? 'कैमरा' : 'Camera'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => galleryInputRef.current?.click()}
+              className="btn-tap btn-secondary"
+              style={{ minHeight: 36, padding: '4px 10px', fontSize: 12, borderRadius: 'var(--radius-full)' }}
+              title="Upload from Gallery"
+            >
+              <ImageIcon size={14} />
+              <span>{lang === 'hi' ? 'गैलरी' : 'Gallery'}</span>
+            </button>
+          </div>
         </div>
 
         <div className="photo-grid">
@@ -514,6 +619,95 @@ export function PassportTab({ lang, passportData, onAddLog, onQuickAdd500 }) {
                   </div>
                 </div>
               )}
+
+              {/* Camera & Photo Evidence Section */}
+              <div
+                className="form-group"
+                style={{
+                  background: '#f8fafc',
+                  padding: 12,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1.5px dashed var(--border-strong)',
+                  marginBottom: 14
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <label className="form-label" style={{ margin: 0 }}>
+                    <Camera size={16} color="var(--primary)" />
+                    <span>{getTranslation(lang, 'cropPhotoTitle')}</span>
+                  </label>
+                  {photoUrl && (
+                    <span className="badge badge-verified" style={{ fontSize: 11 }}>
+                      ✓ {lang === 'hi' ? 'फोटो संलग्न' : 'Photo Attached'}
+                    </span>
+                  )}
+                </div>
+
+                {photoUrl ? (
+                  <div style={{ position: 'relative', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                    <img
+                      src={photoUrl}
+                      alt="Crop Evidence"
+                      style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setPhotoUrl('')}
+                      className="btn-tap"
+                      style={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        background: 'rgba(220, 38, 38, 0.88)',
+                        color: '#ffffff',
+                        minHeight: 32,
+                        minWidth: 32,
+                        padding: '4px 10px',
+                        fontSize: 11,
+                        borderRadius: 'var(--radius-full)'
+                      }}
+                    >
+                      <Trash2 size={13} />
+                      <span>{getTranslation(lang, 'removePhoto')}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <p style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>
+                      {lang === 'hi'
+                        ? 'अपने मोबाइल कैमरे से फसल की स्थिति का सीधा फोटो प्रमाण अपलोड करें:'
+                        : 'Upload photo-backed evidence of your field directly using phone camera:'}
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="btn-tap btn-primary"
+                        style={{ minHeight: 46, fontSize: 13, padding: '8px 10px' }}
+                      >
+                        <Camera size={18} />
+                        <span>{getTranslation(lang, 'takePhoto')}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="btn-tap btn-secondary"
+                        style={{ minHeight: 46, fontSize: 13, padding: '8px 10px' }}
+                      >
+                        <ImageIcon size={18} />
+                        <span>{getTranslation(lang, 'chooseGallery')}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {isProcessingPhoto && (
+                  <div style={{ fontSize: 12, color: 'var(--primary)', marginTop: 8, fontWeight: 700 }}>
+                    ⏳ {lang === 'hi' ? 'फोटो कंप्रेस व प्रोसेस हो रही है...' : 'Processing and compressing photo...'}
+                  </div>
+                )}
+              </div>
 
               <div className="form-group">
                 <label className="form-label">{getTranslation(lang, 'noteOrAction')}</label>

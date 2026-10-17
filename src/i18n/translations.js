@@ -87,6 +87,10 @@ export const TRANSLATIONS = {
     photoEvidenceTitle: 'फोटो प्रमाण गैलरी (Photo Evidence)',
     fieldVerifiedBadge: 'फील्ड सत्यापित (Field-Verified by KVK/FPO)',
     notVerifiedYet: 'किसान द्वारा दर्ज (Farmer-Logged)',
+    takePhoto: 'कैमरा से फोटो खींचें (Take Photo)',
+    chooseGallery: 'गैलरी से चुनें (Upload from Gallery)',
+    cropPhotoTitle: 'फसल/खेत की फोटो प्रमाण (Photo Evidence)',
+    removePhoto: 'फोटो हटाएं',
 
     // Buyers Tab
     buyersTitle: 'खरीदार मांग बोर्ड (Buyer Demand Board)',
@@ -206,6 +210,10 @@ export const TRANSLATIONS = {
     photoEvidenceTitle: 'Photo Evidence Grid',
     fieldVerifiedBadge: 'Field-Verified (by KVK/FPO Officer)',
     notVerifiedYet: 'Farmer-Logged, Photo-Backed',
+    takePhoto: 'Take Photo with Camera',
+    chooseGallery: 'Choose from Gallery',
+    cropPhotoTitle: 'Crop Photo Evidence',
+    removePhoto: 'Remove Photo',
 
     // Buyers Tab
     buyersTitle: 'Buyer Demand Board',
