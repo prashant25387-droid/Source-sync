@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FasalSetu</string>
+    <string name="title_activity_main">FasalSetu</string>
+    <string name="package_name">in.fasalsetu.app</string>
+    <string name="custom_url_scheme">in.fasalsetu.app</string>
+</resources>

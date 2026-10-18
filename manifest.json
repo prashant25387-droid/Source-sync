@@ -1,0 +1,18 @@
+{
+  "name": "FasalSetu — Plan Smart. Grow Better. Prove Your Progress. Connect with Buyers.",
+  "short_name": "FasalSetu",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF9F2",
+  "theme_color": "#166534",
+  "orientation": "portrait",
+  "description": "Water-aware crop planning and verified digital Crop Passport platform for farmers and buyers.",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23166534'><circle cx='256' cy='256' r='256' fill='%23166534'/><path d='M160 380h192' stroke='%23ffffff' stroke-width='32' stroke-linecap='round'/><path d='M210 380c80-40 10-120 40-180' stroke='%23ffffff' stroke-width='32' stroke-linecap='round'/><circle cx='256' cy='160' r='48' fill='%236ee7b7'/></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
